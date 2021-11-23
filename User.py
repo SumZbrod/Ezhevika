@@ -5,6 +5,7 @@ from datetime import datetime as dt
 
 class User:
     def __init__(self, user_id=None) -> None:
+        self.user_path = path_to_data + user_id + '/'
         if user_id is None:
             user_id = self.create_user()
             feature, tasklist = self.default_data()
@@ -27,11 +28,15 @@ class User:
         return feature, tasklist
 
     def load_user_data(self, user_id):
-        user_path = path_to_data + user_id + '/'
-        with open(user_path + 'feature.pkl', 'rb') as f:
+        with open(self.user_path + 'feature.pkl', 'rb') as f:
             feature = joblib.load(f)
-        tasklist =   pd.read_csv(user_path + 'tasklist.csv')
+        tasklist = pd.read_csv(self.user_path + 'tasklist.csv')
         return feature, tasklist
+
+    def save(self):
+        with open(self.user_path + 'feature.pkl', 'wb') as f:
+            joblib.dump(self.feature, f)
+        self.tasklist.to_csv(self.user_path + 'tasklist.csv', index=False)
 
     def make_task(self):
         task_type = input('type: ')
@@ -60,9 +65,9 @@ class User:
         new_task['day_for'] = task_day_for
         new_task['dead_line'] = task_dead_line
         new_task['status'] = task_status
-
         self.tasklist = self.tasklist.append(new_task, ignore_index=True)
-
+        self.save()
+        
 if __name__ == '__main__':
     A = User()
     A.make_task()
