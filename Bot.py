@@ -1,12 +1,24 @@
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Dispatcher
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Dispatcher, updater
 import telegram
 import logging
 from config import *
-import requests
-# import PySimpleGUI as sg
+import json
+import sysconfig
+import User
+
 logging.basicConfig(format='%(levelname)s - %(message)s',
                     level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+def data2dict(raw_data):
+    raw_string = str(raw_data)
+    raw_string = raw_string.replace('\'', '"')
+    raw_string = raw_string.replace('True', '"True"')
+    raw_string = raw_string.replace('False', '"False"')
+    return json.loads(raw_string)
+
+def get_user_id(D):
+    return D['message']['chat']['id']
 
 class Tutovnik:
     def __init__(self) -> None:
@@ -19,35 +31,44 @@ class Tutovnik:
         self.updater = Updater(TOKEN, use_context=True)
         self.dispatcher = self.updater.dispatcher
 
-        self.command_func_dict = {
-            'start': self.start, 
-            'registration': self.registration,
-            'make_task': self.make_task, 
-            }
-        self.tracker_func_dict = {
+        self.command_dict = {
+            'start': self.command_start, 
+            'make_task': self.command_make_task, 
             }
 
+        self.func_dict = {
+            'make_task': self.create_task, 
+            }
+        
+
+        # self.users = User.Users()
+
     def start_bot(self):
-        for name, func in self.command_func_dict.items():
+        for name, func in self.command_dict.items():
             self.dispatcher.add_handler(CommandHandler(name, func))
-        self.dispatcher.add_handler(MessageHandler(Filters.text & (~Filters.command), self.command_tracker))
+        self.dispatcher.add_handler(MessageHandler(Filters.text & (~Filters.command), self.Command_tracker))
         self.updater.start_polling()
         self.updater.idle()
 
-    def start(self, update, context):
-        start_help = '/registration'
+    def command_start(self, update, context):
+        start_help = '/make_task'
         update.message.reply_text(start_help)
-
-    def registration(self, update, context):
-        string = f'{update}'
-        update.message.reply_text(string)
     
-    def command_tracker(self, update, context):
-        if context.user_data['make_task']:
-            update.message.reply_text("soory, i can't now do it")
+    def Command_tracker(self, update, context):
+        update_data = data2dict(update)
+        user_id = get_user_id(update_data)
+        if user_id in context.user_data:
+            self.func_dict[context.user_data[user_id]](update, context)
+            del context.user_data[user_id]
 
-    def make_task(self, update, context):
-        context.user_data['make_task'] = True
+    def command_make_task(self, update, context):
+        update_data = data2dict(update)
+        user_id = get_user_id(update_data)
+        context.user_data[user_id] = 'make_task'
+    
+    def create_task(self, update, context):
+        text = update.message.text
+        update.message.reply_text(f'task "{text}" - created')
 
 if __name__ == '__main__':
     # send_message('hi')
