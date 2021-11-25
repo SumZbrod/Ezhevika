@@ -10,7 +10,7 @@ random_id = (10**6, 10**7)
 
 def_feature = {
     'skills': {
-        'max_count_of_task': 1,
+        'max_count_of_task': 2,
         'max_days_for_task': 2,
         'max_stamina': 100,
     },
@@ -21,16 +21,34 @@ def_feature = {
     }
 }
 
+#Tasklist
+
+statuses_for_task = ['plan', 'performed', 'drop', 'done']
+
 def_tasklist = {
-    'type': [],
     'title': [],
     'day_for': [],
     'dead_line': [],
     'status': [],
 }
 
-statuses_for_task = ['plan', 'performed', 'drop', 'done']
 
-users_columns = ('user_id', 'pub_kes')
+
+def_user = {
+        'user_id' : None,
+        'level': 0,
+        'xp': 0,
+        'stamina': 100,
+        'max_count_of_task': 2,
+        'max_days_for_task': 2,
+        'max_stamina': 100,
+}
+
+users_columns = list(def_user.keys())
+
 if not os.path.exists(path_to_users):
     pd.DataFrame(columns=users_columns).to_csv(path_to_users, index=False)
+
+#BOT
+
+token_path = 'TOKEN'

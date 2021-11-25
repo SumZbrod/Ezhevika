@@ -2,49 +2,58 @@ from config import *
 import joblib
 import numpy as np
 from datetime import datetime as dt 
+import os
 
 class Users:
-    def __init__(self, user_id) -> None:
-        if self.user_exist():
-            self.make_new_user()
+    def __init__(self) -> None:
+        self.users = pd.read_csv(path_to_users)
+        self.users.set_index('user_id', inplace=True)
 
-        feature, tasklist = self.load_user_data()
-            
-        self.user_path = path_to_data + str(user_id) + '/'
-        self.feature = feature
-        self.tasklist = tasklist
+    def user_check(self, user_id, create=True):
+        if user_id not in self.users.index:
+            print('creatinf user')
+            new_user = def_user.copy()
+            new_user['user_id'] = user_id
+            self.users = self.users.append(new_user, ignore_index=True)
+            user_path = f'{path_to_data}{user_id}/'
+            if not os.path.exists(user_path):
+                os.makedirs(user_path)
+            pd.DataFrame(def_tasklist).to_csv(f'{user_path}tasklist.csv', index=False)
+            self.save()
+        else:
+            print('user exists')
 
-    def create_user(self):
-        users_df = pd.read_csv(path_to_users, )
-        while True:
-            user_id = np.random.randint(*random_id)
-            if user_id not in users_df.index:
-                break
-        return user_id
-
-    def default_data(self):
+    def default_data(self, ):
         feature = def_feature.copy()
         tasklist = pd.DataFrame(def_tasklist)
         return feature, tasklist
 
     def load_user_data(self, user_id):
-        with open(self.user_path + 'feature.pkl', 'rb') as f:
+        user_path = None
+        with open(user_path + 'feature.pkl', 'rb') as f:
             feature = joblib.load(f)
-        tasklist = pd.read_csv(self.user_path + 'tasklist.csv')
+        tasklist = pd.read_csv(user_path + 'tasklist.csv')
         return feature, tasklist
 
-    def save(self):
-        with open(self.user_path + 'feature.pkl', 'wb') as f:
-            joblib.dump(self.feature, f)
-        self.tasklist.to_csv(self.user_path + 'tasklist.csv', index=False)
+    def save(self, user_id):
+        user_path = None
+        feature = None
+        tasklist = None
 
-    def make_task(self):
+        with open(user_path + 'feature.pkl', 'wb') as f:
+            joblib.dump(feature, f)
+        tasklist.to_csv(user_path + 'tasklist.csv', index=False)
+
+    def make_task(self, user_id):
+        feature = None
+        tasklist = None
+
         task_title = input('title: ')
         while True:
             task_day_for = input('day_for: ')
             if task_day_for.replace('.', '').isnumeric():
                 task_day_for = float(task_day_for)
-                if task_day_for > self.feature['skills']['max_days_for_task']:
+                if task_day_for > feature['skills']['max_days_for_task']:
                     print('to many days') 
                 else:
                     break
@@ -63,11 +72,10 @@ class Users:
         new_task['day_for'] = task_day_for
         new_task['dead_line'] = task_dead_line
         new_task['status'] = task_status
-        self.tasklist = self.tasklist.append(new_task, ignore_index=True)
-        self.save()
-
+        tasklist = tasklist.append(new_task, ignore_index=True)
+    
+    def save(self):
+        self.users.to_csv(path_to_users)
+        print('saved')
 if __name__ == '__main__':
-    A = User()
-    print(A.user_id)
-    A.make_task()
-    print(A.tasklist)
+    A = Users()
