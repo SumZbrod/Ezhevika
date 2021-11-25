@@ -26,7 +26,7 @@ def_feature = {
 statuses_for_task = ['plan', 'performed', 'drop', 'done']
 
 def_tasklist = {
-    'title': [],
+    'name': [],
     'day_for': [],
     'dead_line': [],
     'status': [],
@@ -42,6 +42,7 @@ def_user = {
         'max_count_of_task': 2,
         'max_days_for_task': 2,
         'max_stamina': 100,
+        'number_of_tasks': 0
 }
 
 users_columns = list(def_user.keys())
