@@ -1,4 +1,6 @@
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Dispatcher, updater
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
+from telebot import types 
 import telegram
 import logging
 from config import *
@@ -15,10 +17,14 @@ def data2dict(raw_data):
     raw_string = raw_string.replace('\'', '"')
     raw_string = raw_string.replace('True', '"True"')
     raw_string = raw_string.replace('False', '"False"')
-    return json.loads(raw_string)
+    D = json.loads(raw_string)
+    if 'callback_query' in D:
+        D = D['callback_query']
+    return D
 
 def get_user_id(raw_data):
     D = data2dict(raw_data)
+
     return D['message']['chat']['id']
 
 def get_user_name(raw_data):
@@ -53,20 +59,37 @@ class Tutovnik:
             'set_number_of_days': self.set_number_of_days,
             }
         self.Users = User.Users()
-        
+
     def start_bot(self):
         # print('\n\t start_bot\n')
         for name, func in self.command_dict.items():
             self.dispatcher.add_handler(CommandHandler(name, func))
         self.dispatcher.add_handler(MessageHandler(Filters.text & (~Filters.command), self.Command_tracker))
+        self.dispatcher.add_handler(CallbackQueryHandler(self.button))
         self.updater.start_polling()
         self.updater.idle()
+
+    def button(self, update: Updater, context: CallbackContext):
+        # print()
+        # print(update)
+        # print()
+        query = update.callback_query
+        query.answer()
+        # query.edit_message_text(text=f"Selected option: {query.data}")
+        self.command_profile(update, context)
 
     def command_start(self, update, context):
         # print('\n\t command_start\n')
         name = get_user_name(update)
+        user_id = get_user_id(update)
+        tasklist_button = telegram.InlineKeyboardButton('/profile',  callback_data="1")
+        markup = telegram.InlineKeyboardMarkup([[tasklist_button]])
+        # tasklist_button = types.KeyboardButton('tasklist')
+        # profile_button = types.KeyboardButton('profile')
+        # markup.add(tasklist_button, profile_button)
         update.message.reply_text(f'Welcome {name}!')
-        update.message.reply_text(f'Try the /help')
+        update.message.reply_text(f'Try the /help',)
+        self.bot.send_message(user_id, user_id, reply_markup=markup)
         self.user_check(update, context)
 
     def user_check(self, update, context):
@@ -74,13 +97,16 @@ class Tutovnik:
         user_id = get_user_id(update)
         self.Users.user_check(user_id)
         context.user_data[user_id] = {'command': None, 'data': None}
+        print('~')
+        print(self.Users.users_table)
+        print('~')
     
     def command_profile(self, update, context):
         user_id = get_user_id(update)
         tasklist = self.Users.get_tasklist(user_id)
-        profile = self.Users.users_table.loc[user_id]
-        update.message.reply_text(f'{profile}')
-        update.message.reply_text(f'{tasklist}')
+        profile = self.Users.get_profile(user_id)
+        self.bot.send_message(user_id, f'{profile}')
+        self.bot.send_message(user_id, f'{tasklist}')
 
     def Command_tracker(self, update, context):
         # print('\n\t Command_tracker\n')
@@ -133,7 +159,10 @@ class Tutovnik:
             update.message.reply_text(f"'{days}' it's not a number")
             update.message.reply_text(f"Please try again")
 
+    def send_message(self, user_id, text):
+        self.bot.send_message(user_id, text)
 if __name__ == '__main__':
     # send_message('hi')
     A = Tutovnik()
     A.start_bot()
+    # A.send_message(1094965520, 'реклама')
